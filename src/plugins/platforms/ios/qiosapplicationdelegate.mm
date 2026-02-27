@@ -48,6 +48,16 @@
 
 #include <QtCore/QtCore>
 
+extern "C" BOOL qIOSApplicationDelegate_handleUrl(NSURL *url) 
+{
+    QIOSIntegration *iosIntegration = QIOSIntegration::instance();
+    Q_ASSERT(iosIntegration);
+
+    QIOSServices *iosServices = static_cast<QIOSServices *>(iosIntegration->services());
+
+    return iosServices->handleUrl(QUrl::fromNSURL(url));
+}
+
 @implementation QIOSApplicationDelegate
 
 - (BOOL)application:(UIApplication *)application continueUserActivity:(NSUserActivity *)userActivity restorationHandler:(void (^)(NSArray<id<UIUserActivityRestoring>> *restorableObjects))restorationHandler
@@ -59,12 +69,7 @@
         return NO;
 
     if ([userActivity.activityType isEqualToString:NSUserActivityTypeBrowsingWeb]) {
-        QIOSIntegration *iosIntegration = QIOSIntegration::instance();
-        Q_ASSERT(iosIntegration);
-
-        QIOSServices *iosServices = static_cast<QIOSServices *>(iosIntegration->services());
-
-        return iosServices->handleUrl(QUrl::fromNSURL(userActivity.webpageURL));
+        return qIOSApplicationDelegate_handleUrl(userActivity.webpageURL);
     }
 
     return NO;
@@ -78,12 +83,7 @@
     if (!QGuiApplication::instance())
         return NO;
 
-    QIOSIntegration *iosIntegration = QIOSIntegration::instance();
-    Q_ASSERT(iosIntegration);
-
-    QIOSServices *iosServices = static_cast<QIOSServices *>(iosIntegration->services());
-
-    return iosServices->handleUrl(QUrl::fromNSURL(url));
+    return qIOSApplicationDelegate_handleUrl(url);
 }
 
 @end
