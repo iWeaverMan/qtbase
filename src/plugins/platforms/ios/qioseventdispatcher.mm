@@ -213,6 +213,9 @@ namespace
 
 using namespace QT_PREPEND_NAMESPACE(QtPrivate);
 
+extern "C" int astraeus_main(int argc, char *argv[]);
+extern "C" int astraeus_uiapplication_main(int argc, char *argv[]);
+
 extern "C" int qt_main_wrapper(int argc, char *argv[])
 {
     @autoreleasepool {
@@ -239,7 +242,12 @@ extern "C" int qt_main_wrapper(int argc, char *argv[])
             lcEventDispatcher().isDebugEnabled(), "UIApplicationMain").enter();
 
         qCDebug(lcEventDispatcher) << "Running UIApplicationMain";
-        return UIApplicationMain(argc, argv, nil, NSStringFromClass([QIOSApplicationDelegate class]));
+        int res = astraeus_uiapplication_main(argc, argv);
+        if (res == -1) 
+        {
+            res = UIApplicationMain(argc, argv, nil, NSStringFromClass([QIOSApplicationDelegate class]));
+        }
+        return res;
     }
 }
 
@@ -250,8 +258,6 @@ enum SetJumpResult
     kJumpedFromEventLoopExecInterrupt,
     kJumpedFromUserMainTrampoline,
 };
-
-extern "C" int main(int argc, char *argv[]);
 
 static void __attribute__((noinline, noreturn)) user_main_trampoline()
 {
@@ -270,7 +276,7 @@ static void __attribute__((noinline, noreturn)) user_main_trampoline()
             qFatal("Could not convert argv[%d] to C string", i);
     }
 
-    int exitCode = main(argc, argv);
+    int exitCode = astraeus_main(argc, argv);
     delete[] argv;
 
     logActivity.applicationDidFinishLaunching.enter();
