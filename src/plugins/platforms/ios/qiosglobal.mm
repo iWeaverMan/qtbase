@@ -61,8 +61,10 @@ bool isQtApplication()
     // embedded inside a native iOS application, and should be more focused on playing along
     // with native UIControls, and less inclined to change structures that lies outside the
     // scope of our QWindows/UIViews.
-    static bool isQt = ([qt_apple_sharedApplication().delegate isKindOfClass:[QIOSApplicationDelegate class]]);
-    return isQt;
+
+    // static bool isQt = ([qt_apple_sharedApplication().delegate isKindOfClass:[QIOSApplicationDelegate class]]);
+    // return isQt;
+    return true;
 }
 
 #ifndef Q_OS_TVOS
