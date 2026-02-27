@@ -84,6 +84,8 @@ import android.view.inputmethod.InputMethodManager;
 import android.view.ViewTreeObserver;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
+import android.view.WindowInsets;
+import android.view.WindowInsets.Type;
 import android.hardware.display.DisplayManager;
 
 import java.io.BufferedReader;
@@ -240,22 +242,31 @@ public class QtActivityDelegate
 
     private QtAccessibilityDelegate m_accessibilityDelegate = null;
 
-    public boolean setKeyboardVisibility(boolean visibility, long timeStamp)
+    public void setKeyboardVisibility(boolean visibility, long timeStamp)
+    {
+        // Since API 30 keyboard visibility changes are tracked by OnApplyWindowInsetsListener.
+        // There are no manual changes anymore
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R)
+            setKeyboardVisibility_internal(visibility, timeStamp);
+    }
+    
+    private void setKeyboardVisibility_internal(boolean visibility, long timeStamp)
     {
         if (m_showHideTimeStamp > timeStamp)
-            return false;
+            return;
         m_showHideTimeStamp = timeStamp;
-
         if (m_keyboardIsVisible == visibility)
-            return false;
+            return;
         m_keyboardIsVisible = visibility;
         QtNative.keyboardVisibilityUpdated(m_keyboardIsVisible);
 
-        if (visibility == false)
+        if (!visibility) {
             updateFullScreen(); // Hiding the keyboard clears the immersive mode, so we need to set it again.
-
-        return true;
+            if (m_editText != null)
+                m_editText.clearFocus();
+        }
     }
+
     public void resetSoftwareKeyboard()
     {
         if (m_imm == null)
@@ -427,8 +438,8 @@ public class QtActivityDelegate
                                                         m_probeKeyboardHeightDelay *= 2;
                                                 }
                                             }
-                                        }, m_probeKeyboardHeightDelay);
-                                    }
+                                    }, m_probeKeyboardHeightDelay);
+                                }
                                 break;
                             case InputMethodManager.RESULT_HIDDEN:
                             case InputMethodManager.RESULT_UNCHANGED_HIDDEN:
@@ -858,6 +869,25 @@ public class QtActivityDelegate
 
         m_editText = new QtEditText(m_activity, this);
         m_imm = (InputMethodManager)m_activity.getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            View rootView = m_activity.getWindow().getDecorView();
+            rootView.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
+                @Override
+                public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
+                    int keyboardHeight = 0;
+                    boolean isKeyboardVisible = insets.isVisible(WindowInsets.Type.ime());
+                    if (isKeyboardVisible) {
+                        keyboardHeight = insets.getInsets(WindowInsets.Type.ime()).bottom - insets.getInsets(WindowInsets.Type.navigationBars()).bottom;
+                    }
+                    if (m_keyboardIsVisible != insets.isVisible(WindowInsets.Type.ime())) {
+                        setKeyboardVisibility_internal(!m_keyboardIsVisible, System.nanoTime());
+                    }
+                    UpdateKeyboardHeght(keyboardHeight);
+                    return insets;
+                }
+            });
+        }
+
         m_surfaces =  new HashMap<Integer, QtSurface>();
         m_nativeViews = new HashMap<Integer, View>();
         m_activity.registerForContextMenu(m_layout);
@@ -882,29 +912,38 @@ public class QtActivityDelegate
                 : m_activity.getDisplay().getRefreshRate();
         QtNative.handleRefreshRateChanged(refreshRate);
 
-        m_layout.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
-            @Override
-            public boolean onPreDraw() {
-                if (!m_keyboardIsVisible)
-                    return true;
-
-                Rect r = new Rect();
-                m_activity.getWindow().getDecorView().getWindowVisibleDisplayFrame(r);
-                DisplayMetrics metrics = new DisplayMetrics();
-                m_activity.getWindowManager().getDefaultDisplay().getMetrics(metrics);
-                final int kbHeight = metrics.heightPixels - r.bottom;
-                if (kbHeight < 0) {
-                    setKeyboardVisibility(false, System.nanoTime());
-                    return true;
-                }
-                final int[] location = new int[2];
-                m_layout.getLocationOnScreen(location);
-                QtNative.keyboardGeometryChanged(location[0], r.bottom - location[1],
-                                                 r.width(), kbHeight);
-                return true;
-            }
-        });
+        // if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+        //     m_layout.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+        //         @Override
+        //         public boolean onPreDraw() {
+        //             UpdateKeyboardHeght(0);
+        //             return true;
+        //         }
+        //     });
+        // }
         m_editPopupMenu = new EditPopupMenu(m_activity, m_layout);
+    }
+
+    private void UpdateKeyboardHeght(int keyboardHeight) 
+    {
+        if (!m_keyboardIsVisible)
+            return;
+
+        Rect r = new Rect();
+        m_activity.getWindow().getDecorView().getWindowVisibleDisplayFrame(r);
+
+        DisplayMetrics metrics = new DisplayMetrics();
+        m_activity.getWindowManager().getDefaultDisplay().getMetrics(metrics);
+
+        int kbHeight = keyboardHeight > 0 ? keyboardHeight : Math.max(metrics.heightPixels - r.bottom, 0);
+        // Log.w(QtNative.QtTAG, "UpdateKeyboardHeght: kbHeight: " + kbHeight+"; r.bottom: "+r.bottom+"; metrics.heightPixels: "+metrics.heightPixels);
+        final int[] location = new int[2];
+        m_layout.getLocationOnScreen(location);
+        QtNative.keyboardGeometryChanged(location[0], r.bottom - location[1],
+                                            r.width(), kbHeight);
+        if (kbHeight == 0) {
+            setKeyboardVisibility(false, System.nanoTime());
+        }
     }
 
     public void hideSplashScreen()
