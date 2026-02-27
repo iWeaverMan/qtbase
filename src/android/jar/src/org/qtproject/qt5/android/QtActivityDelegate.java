@@ -840,10 +840,10 @@ public class QtActivityDelegate
 
             String splashScreenKey = "android.app.splash_screen_drawable_"
                 + (orientation == Configuration.ORIENTATION_LANDSCAPE ? "landscape" : "portrait");
-            if (!info.metaData.containsKey(splashScreenKey))
+            if (info.metaData == null || !info.metaData.containsKey(splashScreenKey))
                 splashScreenKey = "android.app.splash_screen_drawable";
 
-            if (info.metaData.containsKey(splashScreenKey)) {
+            if (info.metaData != null && info.metaData.containsKey(splashScreenKey)) {
                 m_splashScreenSticky = info.metaData.containsKey("android.app.splash_screen_sticky") && info.metaData.getBoolean("android.app.splash_screen_sticky");
                 int id = info.metaData.getInt(splashScreenKey);
                 m_splashScreen = new ImageView(m_activity);

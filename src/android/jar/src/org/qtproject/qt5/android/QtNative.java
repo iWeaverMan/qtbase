@@ -283,7 +283,7 @@ public class QtNative
                                 ApplicationInfo info = getContext().getApplicationContext().getPackageManager()
                                     .getApplicationInfo(getContext().getPackageName(), PackageManager.GET_META_DATA);
                                 String systemLibraryDir = QtNativeLibrariesDir.systemLibrariesDir;
-                                if (info.metaData.containsKey("android.app.system_libs_prefix"))
+                                if (info.metaData != null && info.metaData.containsKey("android.app.system_libs_prefix"))
                                     systemLibraryDir = info.metaData.getString("android.app.system_libs_prefix");
                                 f = new File(systemLibraryDir + libNameTemplate);
                             } catch (Exception e) {
@@ -317,7 +317,7 @@ public class QtNative
                             ApplicationInfo info = getContext().getApplicationContext().getPackageManager()
                                     .getApplicationInfo(getContext().getPackageName(), PackageManager.GET_META_DATA);
                             String systemLibraryDir = QtNativeLibrariesDir.systemLibrariesDir;
-                            if (info.metaData.containsKey("android.app.system_libs_prefix"))
+                            if (info.metaData != null && info.metaData.containsKey("android.app.system_libs_prefix"))
                                 systemLibraryDir = info.metaData.getString("android.app.system_libs_prefix");
                             f = new File(systemLibraryDir + mainLibNameTemplate);
                         } catch (Exception e) {
