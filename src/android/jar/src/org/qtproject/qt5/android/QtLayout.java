@@ -154,6 +154,19 @@ public class QtLayout extends ViewGroup
     }
 
     @Override
+    public void onConfigurationChanged(Configuration configuration)
+    {
+        Activity activity = (Activity)getContext();
+        if (activity == null)
+            return;
+        Display display = (Build.VERSION.SDK_INT < Build.VERSION_CODES.R)
+            ? activity.getWindowManager().getDefaultDisplay()
+            : activity.getDisplay();
+        int newRotation = display.getRotation();
+        m_activityDisplayRotation = newRotation;
+    }
+
+    @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec)
     {
         int count = getChildCount();
