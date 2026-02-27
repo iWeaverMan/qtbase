@@ -1480,7 +1480,7 @@ jboolean QAndroidInputContext::setComposingText(const QString &text, jint newCur
 
     // The value of Qt::ImCursorPosition is not updated at the start
     // when the first character is added, so we must update it (QTBUG-85090)
-    if (absoluteCursorPos == 0 && text.length() == 1 && getTextAfterCursor(1,1).length() >= 0) {
+    if (absoluteCursorPos == 0 && text.length() == 1 && getTextAfterCursor(1,1).length() >= 0 && m_composingText.length() == 0) {
         setCursorPosition();
     }
 
