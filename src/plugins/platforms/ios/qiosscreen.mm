@@ -55,6 +55,8 @@
 
 #include <sys/sysctl.h>
 
+extern "C" int astraeus_ios_themeChanged();
+
 // -------------------------------------------------------------------------
 
 typedef void (^DisplayLinkBlock)(CADisplayLink *displayLink);
@@ -215,6 +217,7 @@ static QIOSScreen* qtPlatformScreenFor(UIScreen *uiScreen)
     if (@available(iOS 12, *)) {
         if (self.screen == UIScreen.mainScreen) {
             if (previousTraitCollection.userInterfaceStyle != self.traitCollection.userInterfaceStyle) {
+                astraeus_ios_themeChanged();
                 QIOSTheme::initializeSystemPalette();
                 QWindowSystemInterface::handleThemeChange<QWindowSystemInterface::SynchronousDelivery>(nullptr);
             }
