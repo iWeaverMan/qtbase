@@ -531,6 +531,9 @@ void QIOSInputContext::scrollToCursor()
 
 void QIOSInputContext::scroll(int y)
 {
+    if (qEnvironmentVariableIsSet("QT_IOS_DISABLE_SCROLL_TO_CURSOR")) {
+        return;
+    }
     Q_ASSERT(y >= 0);
 
     UIView *rootView = scrollableRootView();
