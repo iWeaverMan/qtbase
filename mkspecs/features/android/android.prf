@@ -44,7 +44,7 @@ build_pass|if(single_android_abi:!single_arch) {
         }
     } else: contains(TEMPLATE, "lib"):!static:!QTDIR_build:android_install {
         tmpvar = $$str_member($$TARGET, -$$str_size($${QT_ARCH}), -1)
-        !equals(tmpvar, $${QT_ARCH}): TARGET = $${TARGET}_$${QT_ARCH}
+        !equals(tmpvar, $${QT_ARCH}):!remove_abi_suffix: TARGET = $${TARGET}_$${QT_ARCH}
         target.path = /libs/$$ANDROID_TARGET_ARCH/
         INSTALLS *= target
     }
