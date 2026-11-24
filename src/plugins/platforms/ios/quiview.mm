@@ -44,6 +44,7 @@
 #include "qiosviewcontroller.h"
 #include "qiostextresponder.h"
 #include "qiosscreen.h"
+#include "quiwindow.h"
 #include "qioswindow.h"
 #include "qiosinputcontext.h"
 #ifndef Q_OS_TVOS

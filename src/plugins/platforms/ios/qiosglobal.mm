@@ -123,6 +123,43 @@ int infoPlistValue(NSString* key, int defaultValue)
     return value ? [value intValue] : defaultValue;
 }
 
+UIWindow *presentationWindow(QWindow *window)
+{
+    UIWindow *uiWindow = window ? reinterpret_cast<UIView *>(window->winId()).window : nullptr;
+    if (!uiWindow) {
+        auto *scenes = [qt_apple_sharedApplication().connectedScenes allObjects];
+        if (scenes.count > 0) {
+            auto *windowScene = static_cast<UIWindowScene*>(scenes[0]);
+            uiWindow = windowScene.keyWindow;
+            if (!uiWindow && windowScene.windows.count)
+                uiWindow = windowScene.windows[0];
+        }
+    }
+    return uiWindow;
+}
+
+UIView *rootViewForScreen(QScreen *screen)
+{
+    const auto *iosScreen = static_cast<QIOSScreen *>(screen->handle());
+    for (UIScene *scene in [qt_apple_sharedApplication().connectedScenes allObjects]) {
+        if (![scene isKindOfClass:UIWindowScene.class])
+            continue;
+
+        auto *windowScene = static_cast<UIWindowScene*>(scene);
+
+        if (windowScene.screen != iosScreen->uiScreen())
+            continue;
+
+        UIWindow *uiWindow = windowScene.keyWindow;
+        if (!uiWindow && windowScene.windows.count)
+            uiWindow = windowScene.windows[0];
+
+        return uiWindow.rootViewController.view;
+    }
+
+    return nullptr;
+}
+
 QT_END_NAMESPACE
 
 // -------------------------------------------------------------------------

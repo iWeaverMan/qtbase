@@ -46,10 +46,6 @@
 
 @class QIOSOrientationListener;
 
-@interface QUIWindow : UIWindow
-@property (nonatomic, readonly) BOOL sendingEvent;
-@end
-
 QT_BEGIN_NAMESPACE
 
 class QIOSScreen : public QObject, public QPlatformScreen
@@ -73,12 +69,11 @@ public:
 
     Qt::ScreenOrientation nativeOrientation() const override;
     Qt::ScreenOrientation orientation() const override;
-    void setOrientationUpdateMask(Qt::ScreenOrientations mask) override;
 
     QPixmap grabWindow(WId window, int x, int y, int width, int height) const override;
 
     UIScreen *uiScreen() const;
-    UIWindow *uiWindow() const;
+    // UIWindow *uiWindow() const;
 
     void setUpdatesPaused(bool);
 
@@ -88,13 +83,11 @@ private:
     void deliverUpdateRequests() const;
 
     UIScreen *m_uiScreen;
-    UIWindow *m_uiWindow;
     QRect m_geometry;
     QRect m_availableGeometry;
     int m_depth;
     uint m_physicalDpi;
     QSizeF m_physicalSize;
-    QIOSOrientationListener *m_orientationListener;
     CADisplayLink *m_displayLink;
 };
 

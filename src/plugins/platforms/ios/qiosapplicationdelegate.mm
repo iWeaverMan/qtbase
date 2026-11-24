@@ -43,12 +43,17 @@
 #include "qiosservices.h"
 #include "qiosviewcontroller.h"
 #include "qioswindow.h"
+#include "qiosscreen.h"
+#include "quiwindow.h"
 
 #include <qpa/qplatformintegration.h>
 
 #include <QtCore/QtCore>
 
-extern "C" BOOL qIOSApplicationDelegate_handleUrl(NSURL *url) 
+@interface QIOSWindowSceneDelegate : NSObject<UIWindowSceneDelegate>
+@end
+
+extern "C" BOOL qIOSApplicationDelegate_handleUrl(NSURL *url) __attribute__((visibility("default")))
 {
     QIOSIntegration *iosIntegration = QIOSIntegration::instance();
     Q_ASSERT(iosIntegration);
@@ -56,6 +61,24 @@ extern "C" BOOL qIOSApplicationDelegate_handleUrl(NSURL *url)
     QIOSServices *iosServices = static_cast<QIOSServices *>(iosIntegration->services());
 
     return iosServices->handleUrl(QUrl::fromNSURL(url));
+}
+
+extern "C" UIWindow *qIOSApplicationDelegate_createWindow(UIWindowScene *windowScene) __attribute__((visibility("default")))
+{
+    QUIWindow *window = [[QUIWindow alloc] initWithWindowScene:windowScene];
+
+    QIOSScreen *screen = [&]{
+        for (auto *screen : qGuiApp->screens()) {
+            auto *platformScreen = static_cast<QIOSScreen*>(screen->handle());
+            if (platformScreen->uiScreen() == windowScene.screen)
+                return platformScreen;
+        }
+        Q_UNREACHABLE();
+    }();
+
+    window.rootViewController = [[[QIOSViewController alloc] initWithWindow:window andScreen:screen] autorelease];
+
+    return window;
 }
 
 @implementation QIOSApplicationDelegate
@@ -86,5 +109,24 @@ extern "C" BOOL qIOSApplicationDelegate_handleUrl(NSURL *url)
     return qIOSApplicationDelegate_handleUrl(url);
 }
 
+- (UISceneConfiguration *)application:(UIApplication *)application
+                          configurationForConnectingSceneSession:(UISceneSession *)connectingSceneSession
+                          options:(UISceneConnectionOptions *)options
+{
+    auto *sceneConfig = connectingSceneSession.configuration;
+    sceneConfig.delegateClass = QIOSWindowSceneDelegate.class;
+    return sceneConfig;
+}
+
 @end
 
+@implementation QIOSWindowSceneDelegate
+
+- (void)scene:(UIScene *)scene willConnectToSession:(UISceneSession *)session options:(UISceneConnectionOptions *)connectionOptions
+{
+    Q_ASSERT([scene isKindOfClass:UIWindowScene.class]);
+    UIWindowScene *windowScene = static_cast<UIWindowScene*>(scene);
+    qIOSApplicationDelegate_createWindow(windowScene);
+}
+
+@end

@@ -64,7 +64,6 @@ public:
 
     void setWindowState(Qt::WindowStates state) override;
     void setParent(const QPlatformWindow *window) override;
-    void handleContentOrientationChange(Qt::ScreenOrientation orientation) override;
     void setVisible(bool visible) override;
     void setOpacity(qreal level) override;
 
@@ -113,6 +112,8 @@ private:
 #ifndef QT_NO_DEBUG_STREAM
 QDebug operator<<(QDebug debug, const QIOSWindow *window);
 #endif
+
+QUIView *quiview_cast(UIView *view);
 
 QT_END_NAMESPACE
 
